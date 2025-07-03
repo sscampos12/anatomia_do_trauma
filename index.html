@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação Avançada: Trauma, Cérebro e Corpo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 30%, #16213e 70%, #0f3460 100%);
+            color: #F9FAFB;
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        #simulation-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin: auto;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        #human-figure {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        #canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .control-btn {
+            transition: all 0.3s ease-in-out;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .control-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        .control-btn:active {
+            transform: scale(0.98);
+        }
+        .reaction-item {
+            transition: all 0.6s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .reaction-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .brain-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            transition: all 0.3s ease;
+        }
+        .brain-legend-item.active {
+            background: rgba(255, 107, 107, 0.2);
+            border-left: 3px solid #ff6b6b;
+            transform: translateX(5px);
+        }
+        .brain-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .glow-effect {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+        }
+        .brain-region {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .brain-region:hover {
+            opacity: 0.9;
+            filter: brightness(1.2);
+        }
+        .brain-region.highlighted {
+            filter: drop-shadow(0 0 15px #ff6b6b) brightness(1.3);
+            animation: brainPulse 1.5s infinite;
+        }
+        @keyframes brainPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .trauma-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .consequences-section {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+        .consequence-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+        .timeline-section {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+        .timeline-item {
+            margin-bottom: 12px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        .timeline-immediate {
+            border-left-color: #ef4444;
+        }
+        .timeline-short {
+            border-left-color: #f59e0b;
+        }
+        .timeline-long {
+            border-left-color: #8b5cf6;
+        }
+        .bible-section {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+        }
+        .bible-verse {
+            font-style: italic;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border-left: 4px solid #22c55e;
+            margin-bottom: 8px;
+        }
+        @media (max-width: 768px) {
+            .trauma-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-8xl mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl md:text-7xl font-black text-white uppercase tracking-widest mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                Anatomia do Trauma
+            </h1>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                Simulação científica avançada das respostas neurológicas e fisiológicas a diferentes tipos de feridas emocionais
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
+            
+            <!-- Área de Simulação -->
+            <div class="xl:col-span-2 flex items-center justify-center">
+                <div id="simulation-container">
+                    <!-- SVG da figura humana melhorada -->
+                    <svg id="human-figure" viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Fundo com gradiente -->
+                        <rect width="500" height="700" fill="url(#bodyGradient)"/>
+                        
+                        <!-- Definições -->
+                        <defs>
+                            <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#0a0a0f;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#16213e;stop-opacity:1" />
+                            </linearGradient>
+                            <radialGradient id="brainGlow" cx="50%" cy="50%" r="60%">
+                                <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:#transparent;stop-opacity:0" />
+                            </radialGradient>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge> 
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        
+                        <!-- Cabeça com mais detalhes -->
+                        <circle cx="250" cy="120" r="70" fill="#fdbcb4" stroke="#2d3748" stroke-width="3"/>
+                        <circle cx="250" cy="120" r="65" fill="url(#brainGlow)" opacity="0.3"/>
+                        
+                        <!-- Cérebro detalhado -->
+                        <g id="brain" opacity="0.95">
+                            <!-- Córtex pré-frontal -->
+                            <ellipse cx="220" cy="95" rx="25" ry="18" fill="#ff6b6b" opacity="0.8" class="brain-region" data-region="pfc" data-name="Córtex Pré-frontal"/>
+                            
+                            <!-- Amígdala (esquerda e direita) -->
+                            <circle cx="235" cy="120" r="14" fill="#ff4757" opacity="0.9" class="brain-region" data-region="amygdala" data-name="Amígdala"/>
+                            <circle cx="265" cy="120" r="14" fill="#ff4757" opacity="0.9" class="brain-region" data-region="amygdala" data-name="Amígdala"/>
+                            
+                            <!-- Hipocampo -->
+                            <ellipse cx="270" cy="125" rx="18" ry="10" fill="#ff3742" opacity="0.8" class="brain-region" data-region="hippocampus" data-name="Hipocampo"/>
+                            <ellipse cx="230" cy="125" rx="18" ry="10" fill="#ff3742" opacity="0.8" class="brain-region" data-region="hippocampus" data-name="Hipocampo"/>
+                            
+                            <!-- Córtex cingulado anterior -->
+                            <ellipse cx="250" cy="110" rx="15" ry="8" fill="#ff9ff3" opacity="0.8" class="brain-region" data-region="acc" data-name="Córtex Cingulado"/>
+                            
+                            <!-- Tálamo -->
+                            <circle cx="250" cy="130" r="8" fill="#a855f7" opacity="0.8" class="brain-region" data-region="thalamus" data-name="Tálamo"/>
+                            
+                            <!-- Tronco cerebral -->
+                            <rect x="245" y="145" width="10" height="25" fill="#ff5722" opacity="0.9" class="brain-region" data-region="brainstem" data-name="Tronco Cerebral"/>
+                            
+                            <!-- Cerebelo -->
+                            <circle cx="280" cy="150" r="12" fill="#ffa726" opacity="0.8" class="brain-region" data-region="cerebellum" data-name="Cerebelo"/>
+                            <circle cx="220" cy="150" r="12" fill="#ffa726" opacity="0.8" class="brain-region" data-region="cerebellum" data-name="Cerebelo"/>
+                        </g>
+                        
+                        <!-- Pescoço -->
+                        <rect x="225" y="190" width="50" height="35" fill="#fdbcb4" stroke="#2d3748" stroke-width="2"/>
+                        
+                        <!-- Tronco melhorado -->
+                        <rect x="175" y="225" width="150" height="200" rx="30" fill="#87ceeb" stroke="#2d3748" stroke-width="3"/>
+                        
+                        <!-- Sistema cardiovascular -->
+                        <g id="cardiovascular-system">
+                            <!-- Coração detalhado -->
+                            <path d="M 220 270 C 220 255, 245 255, 245 270 C 245 255, 270 255, 270 270 C 270 290, 245 320, 245 320 C 245 320, 220 290, 220 270 Z" 
+                                  fill="#ff6b6b" stroke="#2d3748" stroke-width="2" opacity="0.9" class="body-part" data-region="heart"/>
+                            <!-- Artérias principais -->
+                            <path d="M 245 270 Q 200 280 180 300" stroke="#ff4757" stroke-width="4" fill="none" opacity="0.6"/>
+                            <path d="M 245 270 Q 290 280 320 300" stroke="#ff4757" stroke-width="4" fill="none" opacity="0.6"/>
+                        </g>
+                        
+                        <!-- Sistema digestivo -->
+                        <g id="digestive-system">
+                            <!-- Estômago -->
+                            <ellipse cx="250" cy="350" rx="40" ry="25" fill="#ffa500" stroke="#2d3748" stroke-width="2" opacity="0.9" class="body-part" data-region="stomach"/>
+                            <!-- Intestinos -->
+                            <ellipse cx="250" cy="390" rx="35" ry="20" fill="#ffb74d" stroke="#2d3748" stroke-width="2" opacity="0.7"/>
+                        </g>
+                        
+                        <!-- Braços com mais detalhes -->
+                        <rect x="100" y="240" width="75" height="25" rx="12" fill="#fdbcb4" stroke="#2d3748" stroke-width="2"/>
+                        <rect x="325" y="240" width="75" height="25" rx="12" fill="#fdbcb4" stroke="#2d3748" stroke-width="2"/>
+                        <rect x="110" y="265" width="25" height="100" rx="12" fill="#fdbcb4" stroke="#2d3748" stroke-width="2"/>
+                        <rect x="365" y="265" width="25" height="100" rx="12" fill="#fdbcb4" stroke="#2d3748" stroke-width="2"/>
+                        
+                        <!-- Mãos -->
+                        <circle cx="122" cy="375" r="18" fill="#fdbcb4" stroke="#2d3748" stroke-width="2"/>
+                        <circle cx="378" cy="375" r="18" fill="#fdbcb4" stroke="#2d3748" stroke-width="2"/>
+                        
+                        <!-- Pernas -->
+                        <rect x="200" y="425" width="30" height="150" rx="15" fill="#4169e1" stroke="#2d3748" stroke-width="2"/>
+                        <rect x="270" y="425" width="30" height="150" rx="15" fill="#4169e1" stroke="#2d3748" stroke-width="2"/>
+                        
+                        <!-- Pés -->
+                        <ellipse cx="215" cy="585" rx="25" ry="15" fill="#8b4513" stroke="#2d3748" stroke-width="2"/>
+                        <ellipse cx="285" cy="585" rx="25" ry="15" fill="#8b4513" stroke="#2d3748" stroke-width="2"/>
+                        
+                        <!-- Áreas para efeitos especiais -->
+                        <ellipse cx="250" cy="70" rx="30" ry="12" fill="transparent" class="body-part" data-region="forehead"/>
+                        <rect x="350" y="290" width="35" height="18" fill="transparent" class="body-part" data-region="arm"/>
+                        <circle cx="250" cy="300" r="20" fill="transparent" class="body-part" data-region="chest"/>
+                    </svg>
+                    
+                    <canvas id="canvas-overlay"></canvas>
+                </div>
+            </div>
+
+            <!-- Painel de Controles -->
+            <div class="xl:col-span-1 flex flex-col gap-6">
+                <div class="glass-panel rounded-xl p-6 shadow-2xl">
+                    <h2 class="text-2xl font-bold text-white mb-6">Tipos de Trauma</h2>
+                    <div class="trauma-grid">
+                        <button data-trauma="rejection" class="control-btn bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            🚫 Rejeição
+                        </button>
+                        <button data-trauma="abandonment" class="control-btn bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            💔 Abandono
+                        </button>
+                        <button data-trauma="humiliation" class="control-btn bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            😔 Humilhação
+                        </button>
+                        <button data-trauma="guilt" class="control-btn bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            😰 Culpa
+                        </button>
+                        <button data-trauma="anxiety" class="control-btn bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            😨 Ansiedade
+                        </button>
+                        <button data-trauma="depression" class="control-btn bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            😞 Depressão
+                        </button>
+                        <button data-trauma="anger" class="control-btn bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            😡 Raiva
+                        </button>
+                        <button data-trauma="fear" class="control-btn bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            😱 Medo
+                        </button>
+                        <button data-trauma="complex" class="control-btn bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-2 rounded-lg text-xs">
+                            🌀 Complexo
+                        </button>
+                    </div>
+                    <button id="resetBtn" class="control-btn w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-4 px-4 rounded-lg mt-6">
+                        🔄 Resetar Simulação
+                    </button>
+                </div>
+                
+                <div class="glass-panel rounded-xl p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4">Área Cerebral Ativa</h3>
+                    <div id="brainLegend" class="space-y-2">
+                        <div class="brain-legend-item" data-region="pfc">
+                            <div class="brain-color-dot" style="background-color: #ff6b6b;"></div>
+                            <span class="text-sm text-gray-300">Córtex Pré-frontal</span>
+                        </div>
+                        <div class="brain-legend-item" data-region="amygdala">
+                            <div class="brain-color-dot" style="background-color: #ff4757;"></div>
+                            <span class="text-sm text-gray-300">Amígdala</span>
+                        </div>
+                        <div class="brain-legend-item" data-region="hippocampus">
+                            <div class="brain-color-dot" style="background-color: #ff3742;"></div>
+                            <span class="text-sm text-gray-300">Hipocampo</span>
+                        </div>
+                        <div class="brain-legend-item" data-region="acc">
+                            <div class="brain-color-dot" style="background-color: #ff9ff3;"></div>
+                            <span class="text-sm text-gray-300">Córtex Cingulado</span>
+                        </div>
+                        <div class="brain-legend-item" data-region="thalamus">
+                            <div class="brain-color-dot" style="background-color: #a855f7;"></div>
+                            <span class="text-sm text-gray-300">Tálamo</span>
+                        </div>
+                        <div class="brain-legend-item" data-region="brainstem">
+                            <div class="brain-color-dot" style="background-color: #ff5722;"></div>
+                            <span class="text-sm text-gray-300">Tronco Cerebral</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-xl p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4">Reações Fisiológicas</h3>
+                    <div id="reactionsPanel" class="space-y-2">
+                        <p class="text-gray-400">Aguardando simulação...</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-xl p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-3">Intensidade do Trauma</h3>
+                    <div class="w-full bg-gray-700 rounded-full h-4 mb-2">
+                        <div id="traumaIntensity" class="bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 h-4 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                    <p id="intensityText" class="text-sm text-gray-400">Nível: 0% - Sistema em equilíbrio</p>
+                </div>
+            </div>
+
+            <!-- Painel de Informações Expandido -->
+            <div class="xl:col-span-2 flex flex-col gap-6">
+                <div class="glass-panel rounded-xl p-6 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-3">Análise Neurológica</h3>
+                    <p id="explanationText" class="text-gray-300 leading-relaxed text-sm">
+                        O sistema nervoso está em homeostase. Selecione um tipo de trauma para observar como diferentes regiões cerebrais respondem e quais reações fisiológicas são desencadeadas.
+                    </p>
+                    
+                    <div id="consequencesSection" class="consequences-section" style="display: none;">
+                        <h4 class="text-lg font-bold text-red-300 mb-3">⚠️ Consequências das Áreas Traumatizadas</h4>
+                        <div id="consequencesList"></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-xl p-6 shadow-2xl">
+                    <div id="timelineSection" class="timeline-section" style="display: none;">
+                        <h4 class="text-lg font-bold text-blue-300 mb-3">⏰ Linha do Tempo das Consequências</h4>
+                        <div id="timelineList"></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-xl p-6 shadow-2xl">
+                    <div id="bibleSection" class="bible-section" style="display: none;">
+                        <h4 class="text-lg font-bold text-green-300 mb-3">📖 Apoio Bíblico e Esperança</h4>
+                        <div id="bibleContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas-overlay');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('simulation-container');
+        const explanationText = document.getElementById('explanationText');
+        const reactionsPanel = document.getElementById('reactionsPanel');
+        const brainLegend = document.getElementById('brainLegend');
+        const traumaIntensity = document.getElementById('traumaIntensity');
+        const intensityText = document.getElementById('intensityText');
+        const consequencesSection = document.getElementById('consequencesSection');
+        const consequencesList = document.getElementById('consequencesList');
+        const timelineSection = document.getElementById('timelineSection');
+        const timelineList = document.getElementById('timelineList');
+        const bibleSection = document.getElementById('bibleSection');
+        const bibleContent = document.getElementById('bibleContent');
+
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Coordenadas atualizadas para o SVG melhorado
+        const locations = {
+            pfc: { x: 0.44, y: 0.136, radius: 0.035 },
+            amygdala: { x: 0.5, y: 0.171, radius: 0.028 },
+            hippocampus: { x: 0.5, y: 0.179, radius: 0.032 },
+            acc: { x: 0.5, y: 0.157, radius: 0.025 },
+            thalamus: { x: 0.5, y: 0.186, radius: 0.02 },
+            brainstem: { x: 0.5, y: 0.207, radius: 0.025 },
+            cerebellum: { x: 0.5, y: 0.214, radius: 0.024 },
+            heart: { x: 0.49, y: 0.4, radius: 0.04 },
+            stomach: { x: 0.5, y: 0.5, radius: 0.055 },
+            chest: { x: 0.5, y: 0.43, radius: 0.04 },
+            forehead: { x: 0.5, y: 0.1, radius: 0.06 },
+            arm: { x: 0.74, y: 0.43, radius: 0.035 }
+        };
+
+        // Consequências específicas de cada área cerebral
+        const brainConsequences = {
+            pfc: [
+                '🧠 Dificuldade na tomada de decisões',
+                '🎯 Problemas de planejamento e organização',
+                '🚫 Redução do controle inibitório',
+                '💭 Comprometimento da memória de trabalho',
+                '⚖️ Dificuldade em avaliar riscos e consequências'
+            ],
+            amygdala: [
+                '😰 Hipervigilância constante',
+                '⚡ Reações de sobressalto exageradas',
+                '😱 Ataques de pânico frequentes',
+                '🌙 Pesadelos e distúrbios do sono',
+                '🔄 Memórias traumáticas intrusivas'
+            ],
+            hippocampus: [
+                '🧠 Problemas de memória de longo prazo',
+                '📚 Dificuldade de aprendizagem',
+                '🗺️ Desorientação espacial e temporal',
+                '🔗 Fragmentação de memórias',
+                '📝 Dificuldade em formar novas memórias'
+            ],
+            acc: [
+                '😔 Dificuldade de regulação emocional',
+                '💔 Processamento alterado da dor emocional',
+                '🤝 Problemas de empatia e conexão social',
+                '⚖️ Conflitos internos intensos',
+                '🎭 Dificuldade em reconhecer emoções'
+            ],
+            thalamus: [
+                '🌡️ Desregulação da temperatura corporal',
+                '💤 Distúrbios graves do sono',
+                '🎚️ Alterações na percepção sensorial',
+                '🧠 Problemas de consciência e alerta',
+                '⚡ Dificuldade de filtrar estímulos'
+            ],
+            brainstem: [
+                '💓 Arritmias cardíacas',
+                '🫁 Problemas respiratórios',
+                '🩸 Instabilidade da pressão arterial',
+                '🌡️ Desregulação da temperatura',
+                '😴 Distúrbios do ciclo sono-vigília'
+            ],
+            cerebellum: [
+                '🤸 Problemas de coordenação motora',
+                '⚖️ Dificuldades de equilíbrio',
+                '🎯 Comprometimento da precisão motora',
+                '🧠 Dificuldade de aprendizagem motora',
+                '🗣️ Problemas na coordenação da fala'
+            ]
+        };
+
+        const traumaData = {
+            rejection: { 
+                color: '#ef4444', 
+                text: 'Rejeição', 
+                reactions: ['💓 Taquicardia intensa', '🤢 Náusea e desconforto gástrico', '😰 Ansiedade social severa', '🥵 Ondas de calor'], 
+                targets: ['amygdala', 'acc'],
+                intensity: 85,
+                explanation: 'A rejeição ativa primariamente a amígdala e o córtex cingulado anterior, desencadeando uma resposta de dor social equivalente à dor física. O sistema nervoso simpático é hiperativado, preparando o corpo para uma resposta de luta ou fuga mesmo em situações sociais.',
+                timeline: {
+                    immediate: ['💔 Dor emocional intensa', '😰 Ansiedade aguda', '💓 Palpitações', '🤢 Náusea'],
+                    short: ['😔 Baixa autoestima', '🚫 Evitação social', '😴 Distúrbios do sono', '🍽️ Alterações no apetite'],
+                    long: ['🧠 Depressão crônica', '🤝 Dificuldades de relacionamento', '😱 Fobia social', '💊 Dependência emocional']
+                },
+                bible: {
+                    verse: '"Porque eu bem sei os pensamentos que tenho a vosso respeito, diz o Senhor; pensamentos de paz e não de mal, para vos dar o fim que esperais." - Jeremias 29:11',
+                    comfort: 'Deus nunca nos rejeita. Mesmo quando outros nos rejeitam, Ele nos aceita completamente e tem planos de esperança para nós.',
+                    hope: 'A rejeição humana não define nosso valor. Em Cristo, somos aceitos, amados e escolhidos para um propósito eterno.'
+                }
+            },
+            abandonment: { 
+                color: '#3b82f6', 
+                text: 'Abandono', 
+                reactions: ['💔 Palpitações severas', '💦 Sudorese profusa', '😱 Ataques de pânico', '🌀 Vertigem'], 
+                targets: ['amygdala', 'hippocampus'],
+                intensity: 90,
+                explanation: 'O abandono dispara nossa resposta de apego primitiva, ativando intensamente a amígdala e afetando a consolidação de memórias no hipocampo. Esta combinação cria um estado de alerta constante e pode fragmentar a formação de memórias, levando a flashbacks e revivências traumáticas.',
+                timeline: {
+                    immediate: ['😱 Pânico extremo', '💔 Sensação de vazio', '🌀 Desorientação', '😰 Medo intenso'],
+                    short: ['😔 Tristeza profunda', '🔍 Busca desesperada', '😴 Insônia', '🍽️ Perda de apetite'],
+                    long: ['🧠 Transtorno de apego', '😱 Medo de abandono', '🤝 Dependência emocional', '💊 Depressão maior']
+                },
+                bible: {
+                    verse: '"Não te deixarei nem te desampararei." - Hebreus 13:5',
+                    comfort: 'Deus promete nunca nos abandonar. Mesmo quando pessoas importantes saem de nossas vidas, Ele permanece fiel.',
+                    hope: 'O abandono humano é temporário, mas o amor de Deus é eterno. Ele está sempre presente, mesmo nos momentos mais solitários.'
+                }
+            },
+            humiliation: { 
+                color: '#a855f7', 
+                text: 'Humilhação', 
+                reactions: ['🩸 Hipertensão aguda', '🤮 Enjoo severo', '😳 Rubor facial', '🥶 Tremores'], 
+                targets: ['hippocampus', 'pfc'],
+                intensity: 80,
+                explanation: 'A humilhação afeta profundamente o hipocampo (memória autobiográfica) e sobrecarrega o córtex pré-frontal, comprometendo a autorregulação emocional. Esta combinação resulta em memórias dolorosas persistentes e dificuldade em processar racionalmente a experiência traumática.',
+                timeline: {
+                    immediate: ['😳 Vergonha intensa', '🔥 Rubor facial', '🤮 Náusea', '🥶 Tremores'],
+                    short: ['😔 Autoestima baixa', '🚫 Isolamento social', '😰 Ansiedade social', '💭 Ruminação'],
+                    long: ['🧠 Complexo de inferioridade', '😱 Fobia social', '💊 Depressão', '🤝 Dificuldades interpessoais']
+                },
+                bible: {
+                    verse: '"Porque a minha honra vem de Deus, que é o meu Salvador." - Salmos 62:7',
+                    comfort: 'Nossa dignidade não vem da aprovação humana, mas de sermos filhos de Deus. Ele nos honra mesmo quando outros nos humilham.',
+                    hope: 'A humilhação é passageira, mas nossa identidade em Cristo é eterna. Somos preciosos aos olhos de Deus.'
+                }
+            },
+            guilt: { 
+                color: '#f59e0b', 
+                text: 'Culpa', 
+                reactions: ['😣 Opressão torácica', '🥶 Calafrios', '🔄 Ruminação obsessiva', '😴 Fadiga extrema'], 
+                targets: ['pfc', 'acc'],
+                intensity: 75,
+                explanation: 'A culpa sobrecarrega o córtex pré-frontal e o córtex cingulado anterior, criando loops de autocrítica que drenam recursos cognitivos. Esta ativação excessiva leva à ruminação constante e compromete a capacidade de tomar decisões equilibradas e processar emoções de forma saudável.',
+                timeline: {
+                    immediate: ['😣 Peso no peito', '💭 Pensamentos obsessivos', '😰 Ansiedade', '🥶 Calafrios'],
+                    short: ['😔 Autopunição', '🔄 Ruminação constante', '😴 Fadiga mental', '🚫 Evitação'],
+                    long: ['🧠 Depressão crônica', '💊 Transtorno obsessivo', '🤝 Autossabotagem', '😱 Ansiedade generalizada']
+                },
+                bible: {
+                    verse: '"Se confessarmos os nossos pecados, ele é fiel e justo para nos perdoar os pecados e nos purificar de toda injustiça." - 1 João 1:9',
+                    comfort: 'Deus oferece perdão completo. A culpa não precisa nos dominar quando buscamos o perdão divino.',
+                    hope: 'Em Cristo, somos libertos da condenação. O perdão de Deus é maior que qualquer culpa que carregamos.'
+                }
+            },
+            anxiety: { 
+                color: '#10b981', 
+                text: 'Ansiedade', 
+                reactions: ['⚡ Hipervigilância', '💨 Hiperventilação', '🤲 Tremor nas mãos', '👁️ Midríase (pupilas dilatadas)'], 
+                targets: ['amygdala', 'brainstem'],
+                intensity: 70,
+                explanation: 'A ansiedade ativa o sistema de alarme da amígdala e o tronco cerebral, preparando o corpo para resposta de luta ou fuga mesmo sem ameaça real. Esta ativação crônica pode levar à desregulação de funções vitais básicas como respiração, frequência cardíaca e pressão arterial.',
+                timeline: {
+                    immediate: ['⚡ Alerta extremo', '💨 Respiração rápida', '💓 Taquicardia', '🤲 Tremores'],
+                    short: ['😰 Preocupação constante', '😴 Insônia', '🍽️ Problemas digestivos', '💭 Pensamentos catastróficos'],
+                    long: ['🧠 Transtorno de ansiedade', '💊 Ataques de pânico', '🤝 Evitação social', '😱 Agorafobia']
+                },
+                bible: {
+                    verse: '"Não andeis ansiosos por coisa alguma; antes, em tudo, sejam conhecidas, diante de Deus, as vossas petições, pela oração e pela súplica, com ações de graças." - Filipenses 4:6',
+                    comfort: 'Deus nos convida a entregar nossas ansiedades a Ele. Não precisamos carregar sozinhos o peso das preocupações.',
+                    hope: 'A paz de Deus, que excede todo entendimento, pode guardar nossos corações e mentes em Cristo Jesus.'
+                }
+            },
+            depression: { 
+                color: '#6366f1', 
+                text: 'Depressão', 
+                reactions: ['😴 Letargia profunda', '🍽️ Perda de apetite', '💤 Distúrbios do sono', '🧠 Névoa mental'], 
+                targets: ['pfc', 'hippocampus', 'thalamus'],
+                intensity: 85,
+                explanation: 'A depressão envolve disfunção em múltiplas áreas: córtex pré-frontal (tomada de decisão), hipocampo (memória) e tálamo (regulação do humor). Esta tríade afetada resulta em comprometimento cognitivo generalizado, problemas de memória e desregulação dos ritmos circadianos.',
+                timeline: {
+                    immediate: ['😔 Tristeza profunda', '😴 Fadiga extrema', '🧠 Confusão mental', '💤 Sonolência'],
+                    short: ['🍽️ Perda de apetite', '😴 Insônia ou hipersonia', '🚫 Perda de interesse', '💭 Pensamentos negativos'],
+                    long: ['🧠 Depressão maior', '💊 Ideação suicida', '🤝 Isolamento social', '😱 Desesperança crônica']
+                },
+                bible: {
+                    verse: '"Vinde a mim, todos os que estais cansados e sobrecarregados, e eu vos aliviarei." - Mateus 11:28',
+                    comfort: 'Jesus oferece descanso para nossas almas cansadas. Ele compreende nossa dor e oferece alívio.',
+                    hope: 'Mesmo na escuridão da depressão, a luz de Cristo pode penetrar. Há esperança e cura em Seu amor.'
+                }
+            },
+            anger: { 
+                color: '#ea580c', 
+                text: 'Raiva', 
+                reactions: ['🔥 Aumento da temperatura corporal', '👊 Tensão muscular', '🩸 Pressão arterial elevada', '⚡ Energia explosiva'], 
+                targets: ['amygdala', 'brainstem'],
+                intensity: 95,
+                explanation: 'A raiva ativa intensamente a amígdala e o tronco cerebral, liberando adrenalina e preparando o corpo para confronto físico. Esta ativação extrema pode comprometer o controle inibitório e levar a comportamentos impulsivos, além de sobrecarregar o sistema cardiovascular.',
+                timeline: {
+                    immediate: ['🔥 Calor intenso', '👊 Tensão muscular', '🩸 Pressão alta', '⚡ Impulsos agressivos'],
+                    short: ['😡 Irritabilidade constante', '💭 Pensamentos vingativos', '🤝 Conflitos relacionais', '😴 Distúrbios do sono'],
+                    long: ['🧠 Transtorno explosivo', '💊 Problemas cardiovasculares', '🤝 Isolamento social', '😱 Comportamento violento']
+                },
+                bible: {
+                    verse: '"Irai-vos e não pequeis; não se ponha o sol sobre a vossa ira." - Efésios 4:26',
+                    comfort: 'Deus entende nossa raiva, mas nos ensina a processá-la de forma saudável, sem pecar.',
+                    hope: 'O Espírito Santo pode nos dar autocontrole e transformar nossa raiva em energia para o bem.'
+                }
+            },
+            fear: { 
+                color: '#ec4899', 
+                text: 'Medo', 
+                reactions: ['🏃 Impulso de fuga', '❄️ Paralisia temporária', '👀 Visão em túnel', '💓 Palpitações extremas'], 
+                targets: ['amygdala', 'brainstem', 'cerebellum'],
+                intensity: 88,
+                explanation: 'O medo ativa o circuito amígdala-tronco cerebral-cerebelo, preparando respostas motoras rápidas de sobrevivência. Esta ativação pode resultar em paralisia temporária ou hiperativação motora, comprometendo a coordenação e o equilíbrio em situações de estresse.',
+                timeline: {
+                    immediate: ['😱 Terror intenso', '🏃 Impulso de fuga', '💓 Palpitações', '❄️ Paralisia'],
+                    short: ['😰 Ansiedade persistente', '🚫 Evitação', '😴 Pesadelos', '💭 Pensamentos catastróficos'],
+                    long: ['🧠 Transtorno de estresse pós-traumático', '😱 Fobias específicas', '💊 Ataques de pânico', '🤝 Agorafobia']
+                },
+                bible: {
+                    verse: '"Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento com a minha destra fiel." - Isaías 41:10',
+                    comfort: 'Deus está conosco em todos os momentos de medo. Sua presença nos fortalece e nos dá coragem.',
+                    hope: 'O amor perfeito de Deus lança fora o medo. Em Sua presença, encontramos segurança e paz.'
+                }
+            },
+            complex: { 
+                color: '#6b7280', 
+                text: 'Trauma Complexo', 
+                reactions: ['🌀 Dissociação', '🔄 Flashbacks', '😵 Despersonalização', '⚡ Hiperativação crônica'], 
+                targets: ['amygdala', 'hippocampus', 'pfc', 'brainstem'],
+                intensity: 100,
+                explanation: 'O trauma complexo afeta múltiplos sistemas cerebrais simultaneamente, causando desregulação generalizada e fragmentação da experiência consciente. Esta ativação sistêmica resulta em sintomas dissociativos, problemas de identidade e desregulação emocional severa que afeta todas as áreas da vida.',
+                timeline: {
+                    immediate: ['🌀 Dissociação severa', '🔄 Flashbacks intensos', '😵 Despersonalização', '⚡ Hiperativação'],
+                    short: ['🧠 Fragmentação da memória', '😱 Pesadelos recorrentes', '🤝 Dificuldades relacionais', '💭 Confusão de identidade'],
+                    long: ['🧠 Transtorno dissociativo', '💊 TEPT complexo', '🤝 Transtorno de personalidade', '😱 Ideação suicida crônica']
+                },
+                bible: {
+                    verse: '"Ele sara os quebrantados de coração e liga as suas feridas." - Salmos 147:3',
+                    comfort: 'Deus é especialista em curar corações quebrantados. Não há trauma complexo demais para Seu poder restaurador.',
+                    hope: 'Mesmo nas feridas mais profundas, Deus pode trazer cura completa. Ele faz todas as coisas novas.'
+                }
+            }
+        };
+
+        let particles = [];
+        let state = {
+            type: 'idle',
+            pulse: 0,
+            shockwave: 0,
+            activeReactions: [],
+            currentIntensity: 0,
+            targetIntensity: 0
+        };
+
+        function triggerTrauma(type) {
+            if (state.type !== 'idle') return;
+            
+            const data = traumaData[type];
+            state.type = type;
+            state.activeReactions = data.reactions;
+            state.targetIntensity = data.intensity;
+            
+            // Atualizar textos
+            explanationText.textContent = data.explanation;
+            showReactions(data.reactions);
+            updateBrainLegend(data.targets);
+            showConsequences(data.targets);
+            showTimeline(data.timeline);
+            showBibleSupport(data.bible);
+
+            // Criar partículas para cada região alvo
+            data.targets.forEach((target, index) => {
+                setTimeout(() => {
+                    highlightBrainRegion(target);
+                    createParticlesForTarget(target, data.color);
+                }, index * 300);
+            });
+        }
+
+        function showConsequences(activeRegions) {
+            consequencesList.innerHTML = '';
+            
+            if (activeRegions.length > 0) {
+                consequencesSection.style.display = 'block';
+                
+                activeRegions.forEach(region => {
+                    if (brainConsequences[region]) {
+                        const regionTitle = document.createElement('h5');
+                        regionTitle.className = 'text-red-200 font-bold mb-2 text-sm';
+                        regionTitle.textContent = getRegionName(region);
+                        consequencesList.appendChild(regionTitle);
+                        
+                        brainConsequences[region].forEach(consequence => {
+                            const item = document.createElement('div');
+                            item.className = 'consequence-item';
+                            item.innerHTML = `<span class="text-red-300 text-xs">${consequence}</span>`;
+                            consequencesList.appendChild(item);
+                        });
+                    }
+                });
+            } else {
+                consequencesSection.style.display = 'none';
+            }
+        }
+
+        function showTimeline(timeline) {
+            timelineList.innerHTML = '';
+            timelineSection.style.display = 'block';
+            
+            // Consequências Imediatas
+            const immediateDiv = document.createElement('div');
+            immediateDiv.className = 'timeline-item timeline-immediate';
+            immediateDiv.innerHTML = `
+                <h5 class="text-red-300 font-bold mb-2 text-sm">🚨 Consequências Imediatas (0-24h)</h5>
+                ${timeline.immediate.map(item => `<div class="text-red-200 text-xs mb-1">${item}</div>`).join('')}
+            `;
+            timelineList.appendChild(immediateDiv);
+            
+            // Consequências de Curto Prazo
+            const shortDiv = document.createElement('div');
+            shortDiv.className = 'timeline-item timeline-short';
+            shortDiv.innerHTML = `
+                <h5 class="text-yellow-300 font-bold mb-2 text-sm">⏰ Consequências de Curto Prazo (1 semana - 3 meses)</h5>
+                ${timeline.short.map(item => `<div class="text-yellow-200 text-xs mb-1">${item}</div>`).join('')}
+            `;
+            timelineList.appendChild(shortDiv);
+            
+            // Consequências de Longo Prazo
+            const longDiv = document.createElement('div');
+            longDiv.className = 'timeline-item timeline-long';
+            longDiv.innerHTML = `
+                <h5 class="text-purple-300 font-bold mb-2 text-sm">📅 Consequências de Longo Prazo (6 meses+)</h5>
+                ${timeline.long.map(item => `<div class="text-purple-200 text-xs mb-1">${item}</div>`).join('')}
+            `;
+            timelineList.appendChild(longDiv);
+        }
+
+        function showBibleSupport(bible) {
+            bibleContent.innerHTML = '';
+            bibleSection.style.display = 'block';
+            
+            // Versículo
+            const verseDiv = document.createElement('div');
+            verseDiv.className = 'bible-verse';
+            verseDiv.innerHTML = `<div class="text-green-200 text-sm">${bible.verse}</div>`;
+            bibleContent.appendChild(verseDiv);
+            
+            // Conforto
+            const comfortDiv = document.createElement('div');
+            comfortDiv.className = 'mb-3';
+            comfortDiv.innerHTML = `
+                <h6 class="text-green-300 font-bold mb-1 text-sm">💝 Conforto:</h6>
+                <div class="text-green-200 text-xs">${bible.comfort}</div>
+            `;
+            bibleContent.appendChild(comfortDiv);
+            
+            // Esperança
+            const hopeDiv = document.createElement('div');
+            hopeDiv.innerHTML = `
+                <h6 class="text-green-300 font-bold mb-1 text-sm">🌟 Esperança:</h6>
+                <div class="text-green-200 text-xs">${bible.hope}</div>
+            `;
+            bibleContent.appendChild(hopeDiv);
+        }
+
+        function getRegionName(region) {
+            const names = {
+                pfc: 'Córtex Pré-frontal',
+                amygdala: 'Amígdala',
+                hippocampus: 'Hipocampo',
+                acc: 'Córtex Cingulado Anterior',
+                thalamus: 'Tálamo',
+                brainstem: 'Tronco Cerebral',
+                cerebellum: 'Cerebelo'
+            };
+            return names[region] || region;
+        }
+
+        function createParticlesForTarget(target, color) {
+            const location = locations[target];
+            if (!location) return;
+
+            const targetX = location.x * canvas.width;
+            const targetY = location.y * canvas.height;
+
+            for (let i = 0; i < 60; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 4 + 1,
+                    speed: Math.random() * 5 + 2,
+                    color: color,
+                    target: { x: targetX, y: targetY },
+                    life: 1.0,
+                    decay: 0.008
+                });
+            }
+        }
+        
+        function highlightBrainRegion(region) {
+            const elements = document.querySelectorAll(`[data-region="${region}"]`);
+            elements.forEach(element => {
+                element.classList.add('highlighted');
+            });
+        }
+
+        function updateBrainLegend(activeRegions) {
+            const legendItems = brainLegend.querySelectorAll('.brain-legend-item');
+            legendItems.forEach(item => {
+                item.classList.remove('active');
+                const region = item.getAttribute('data-region');
+                if (activeRegions.includes(region)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        function showReactions(reactions) {
+            reactionsPanel.innerHTML = '';
+            reactions.forEach((reaction, index) => {
+                const item = document.createElement('div');
+                item.className = 'reaction-item text-gray-300';
+                item.textContent = reaction;
+                reactionsPanel.appendChild(item);
+                setTimeout(() => item.classList.add('visible'), index * 250);
+            });
+        }
+
+        function updateIntensity() {
+            if (state.currentIntensity < state.targetIntensity) {
+                state.currentIntensity += 2;
+            } else if (state.currentIntensity > state.targetIntensity) {
+                state.currentIntensity -= 1;
+            }
+
+            traumaIntensity.style.width = `${state.currentIntensity}%`;
+            
+            let level = 'Baixo';
+            if (state.currentIntensity > 30) level = 'Moderado';
+            if (state.currentIntensity > 60) level = 'Alto';
+            if (state.currentIntensity > 85) level = 'Severo';
+            
+            intensityText.textContent = `Nível: ${state.currentIntensity}% - ${level}`;
+        }
+
+        function update() {
+            updateIntensity();
+            
+            if (state.type !== 'idle') {
+                state.pulse += 0.06;
+                
+                if (particles.length < 30 && state.shockwave < 1) {
+                    state.shockwave += 0.012;
+                }
+            }
+
+            // Atualizar partículas
+            particles = particles.filter((p) => {
+                const dx = p.target.x - p.x;
+                const dy = p.target.y - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < 20) {
+                    return false;
+                } else {
+                    p.x += (dx / dist) * p.speed;
+                    p.y += (dy / dist) * p.speed;
+                    p.life -= p.decay;
+                    return p.life > 0;
+                }
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar partículas com efeito de brilho
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.life * 0.9;
+                
+                // Brilho
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 15;
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.restore();
+            });
+
+            if (state.type !== 'idle') {
+                const data = traumaData[state.type];
+                
+                // Desenhar ondas de choque para cada região ativa
+                if (state.shockwave > 0 && state.shockwave < 1) {
+                    data.targets.forEach(target => {
+                        const location = locations[target];
+                        if (location) {
+                            const x = location.x * canvas.width;
+                            const y = location.y * canvas.height;
+                            const maxRadius = location.radius * canvas.width * 12;
+                            
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(x, y, maxRadius * state.shockwave, 0, Math.PI * 2);
+                            ctx.strokeStyle = data.color;
+                            ctx.lineWidth = 5 * (1 - state.shockwave);
+                            ctx.globalAlpha = (1 - state.shockwave) * 0.7;
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    });
+                }
+
+                // Desenhar efeitos fisiológicos
+                state.activeReactions.forEach(reaction => {
+                    if (reaction.includes('cardíaco') || reaction.includes('Palpitações') || reaction.includes('Taquicardia')) {
+                        drawHeartEffect();
+                    }
+                    if (reaction.includes('Sudorese') || reaction.includes('Suor')) {
+                        drawSweatEffect();
+                    }
+                    if (reaction.includes('pressão') || reaction.includes('Hipertensão')) {
+                        drawBloodPressureEffect();
+                    }
+                    if (reaction.includes('estômago') || reaction.includes('Náusea') || reaction.includes('gástrico')) {
+                        drawStomachEffect();
+                    }
+                    if (reaction.includes('Tremor') || reaction.includes('Tremores')) {
+                        drawTremorEffect();
+                    }
+                });
+            }
+        }
+        
+        function drawHeartEffect() {
+            const loc = locations.heart;
+            const x = loc.x * canvas.width;
+            const y = loc.y * canvas.height;
+            const baseRadius = loc.radius * canvas.width;
+            const radius = baseRadius + Math.sin(state.pulse * 4) * 12;
+            
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            const alpha = 0.5 + Math.sin(state.pulse * 4) * 0.3;
+            ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`;
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 20;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawSweatEffect() {
+            const loc = locations.forehead;
+            const baseX = loc.x * canvas.width;
+            const baseY = loc.y * canvas.height;
+            
+            for(let i = 0; i < 8; i++) {
+                const x = baseX + (Math.random() - 0.5) * 60;
+                const y = baseY + Math.random() * 30;
+                const size = Math.random() * 4 + 2;
+                
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(59, 130, 246, ${0.7 + Math.random() * 0.3})`;
+                ctx.shadowColor = '#3b82f6';
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        function drawBloodPressureEffect() {
+            const loc = locations.arm;
+            const x = loc.x * canvas.width;
+            const y = loc.y * canvas.height;
+            const pressure = (Math.sin(state.pulse * 3) + 1) / 2;
+            
+            ctx.save();
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 4;
+            ctx.shadowColor = '#a855f7';
+            ctx.shadowBlur = 10;
+            ctx.strokeRect(x - 30, y - 10, 60, 20);
+            
+            ctx.fillStyle = '#a855f7';
+            ctx.fillRect(x - 28, y - 8, 56 * pressure, 16);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText('PA ↑', x, y - 18);
+            ctx.restore();
+        }
+
+        function drawStomachEffect() {
+            const loc = locations.stomach;
+            const x = loc.x * canvas.width;
+            const y = loc.y * canvas.height;
+            const radius = loc.radius * canvas.width;
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(state.pulse * 0.4);
+            
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 5;
+            ctx.shadowColor = '#f59e0b';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            for(let i = 0; i < Math.PI * 6; i += 0.1) {
+                const r = (i / (Math.PI * 6)) * radius;
+                const px = Math.cos(i) * r;
+                const py = Math.sin(i) * r;
+                if(i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawTremorEffect() {
+            const loc = locations.arm;
+            const x = loc.x * canvas.width;
+            const y = loc.y * canvas.height;
+            
+            ctx.save();
+            ctx.strokeStyle = '#ec4899';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#ec4899';
+            ctx.shadowBlur = 10;
+            
+            for(let i = 0; i < 5; i++) {
+                const offsetX = Math.sin(state.pulse * 8 + i) * 8;
+                const offsetY = Math.cos(state.pulse * 8 + i) * 8;
+                ctx.beginPath();
+                ctx.arc(x + offsetX, y + offsetY, 3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function animate() {
+            update();
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        function reset() {
+            state.type = 'idle';
+            state.pulse = 0;
+            state.shockwave = 0;
+            state.targetIntensity = 0;
+            particles = [];
+            state.activeReactions = [];
+            
+            explanationText.textContent = 'O sistema nervoso está em homeostase. Selecione um tipo de trauma para observar como diferentes regiões cerebrais respondem e quais reações fisiológicas são desencadeadas.';
+            reactionsPanel.innerHTML = '<p class="text-gray-400">Aguardando simulação...</p>';
+            consequencesSection.style.display = 'none';
+            timelineSection.style.display = 'none';
+            bibleSection.style.display = 'none';
+            
+            // Remover destaques
+            document.querySelectorAll('.highlighted').forEach(el => {
+                el.classList.remove('highlighted');
+            });
+            
+            // Resetar legenda
+            document.querySelectorAll('.brain-legend-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+
+        // Event listeners
+        document.querySelectorAll('.control-btn[data-trauma]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const traumaType = btn.dataset.trauma;
+                triggerTrauma(traumaType);
+                
+                btn.classList.add('glow-effect');
+                setTimeout(() => btn.classList.remove('glow-effect'), 1500);
+            });
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', reset);
+        
+        // Iniciar animação
+        animate();
+    </script>
+</body>
+</html>
+
